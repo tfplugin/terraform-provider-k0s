@@ -8,6 +8,9 @@ import (
 	"log"
 )
 
+// Provider documentation generation.
+//go:generate go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs generate --provider-name k0s
+
 func main() {
 	var debug bool
 
