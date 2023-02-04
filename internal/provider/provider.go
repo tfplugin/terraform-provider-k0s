@@ -1,4 +1,4 @@
-package k0s
+package provider
 
 import (
 	"context"
@@ -16,27 +16,24 @@ func New() func() provider.Provider {
 	}
 }
 
-func (p *k0sProvider) Metadata(ctx context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
-	//TODO implement me
-	panic("implement me")
+func (p *k0sProvider) Metadata(_ context.Context, _ provider.MetadataRequest, resp *provider.MetadataResponse) {
+	resp.TypeName = "k0s"
 }
 
 func (p *k0sProvider) Schema(ctx context.Context, req provider.SchemaRequest, resp *provider.SchemaResponse) {
-	//TODO implement me
-	panic("implement me")
+
 }
 
 func (p *k0sProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
-	//TODO implement me
-	panic("implement me")
+
 }
 
-func (p *k0sProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
-	//TODO implement me
-	panic("implement me")
+func (p *k0sProvider) DataSources(_ context.Context) []func() datasource.DataSource {
+	return nil
 }
 
-func (p *k0sProvider) Resources(ctx context.Context) []func() resource.Resource {
-	//TODO implement me
-	panic("implement me")
+func (p *k0sProvider) Resources(_ context.Context) []func() resource.Resource {
+	return []func() resource.Resource{
+		NewClusterResource,
+	}
 }

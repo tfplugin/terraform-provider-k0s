@@ -4,7 +4,7 @@ import (
 	"context"
 	"flag"
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
-	"github.com/tfplugin/terraform-provider-k0s/k0s"
+	"github.com/tfplugin/terraform-provider-k0s/internal/provider"
 	"log"
 )
 
@@ -19,7 +19,7 @@ func main() {
 		Debug:   debug,
 	}
 
-	err := providerserver.Serve(context.Background(), k0s.New(), opts)
+	err := providerserver.Serve(context.Background(), provider.New(), opts)
 
 	if err != nil {
 		log.Fatal(err.Error())
