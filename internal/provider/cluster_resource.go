@@ -3,6 +3,7 @@ package provider
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -98,7 +99,7 @@ func (r *clusterResource) Read(ctx context.Context, req resource.ReadRequest, re
 	kubeconfig, err := r.getKubeconfig(ctx)
 	if err != nil {
 		// If k0s cluster doesn't exist or DeadlineExceeded, clean resource state
-		if strings.Contains(err.Error(), "failed to read file /var/lib/k0s/kubelet.conf") || ctx.Err() != nil {
+		if strings.Contains(err.Error(), "failed to read file /var/lib/k0s/kubelet.conf") || errors.Is(ctx.Err(), context.DeadlineExceeded) {
 			resp.State.RemoveResource(ctx)
 		} else {
 			resp.Diagnostics.AddError("Failed to read kubeconfig", err.Error())
