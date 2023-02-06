@@ -11,6 +11,7 @@ import (
 	"github.com/k0sproject/k0sctl/cmd"
 	"os"
 	"strings"
+	"time"
 )
 
 const (
@@ -63,7 +64,7 @@ func (r *clusterResource) Create(ctx context.Context, req resource.CreateRequest
 		return
 	}
 
-	r.apply(&plan, &resp.Diagnostics)
+	r.apply(ctx, &plan, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -90,7 +91,11 @@ func (r *clusterResource) Read(ctx context.Context, req resource.ReadRequest, re
 		}
 	}()
 
-	kubeconfig, err := r.getKubeconfig()
+	// Add 1 min timeout to k0sctl kubeconfig
+	ctx, cancel := context.WithTimeout(ctx, time.Minute)
+	defer cancel()
+
+	kubeconfig, err := r.getKubeconfig(ctx)
 	if err != nil {
 		// if k0s cluster doesn't exist, clean resource state
 		if strings.Contains(err.Error(), "failed to read file /var/lib/k0s/kubelet.conf") {
@@ -113,7 +118,7 @@ func (r *clusterResource) Update(ctx context.Context, req resource.UpdateRequest
 		return
 	}
 
-	r.apply(&plan, &resp.Diagnostics)
+	r.apply(ctx, &plan, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -169,7 +174,7 @@ func (r *clusterResource) cleanUp() error {
 	return nil
 }
 
-func (r *clusterResource) apply(model *clusterResourceModel, diagnostics *diag.Diagnostics) *clusterResourceModel {
+func (r *clusterResource) apply(ctx context.Context, model *clusterResourceModel, diagnostics *diag.Diagnostics) *clusterResourceModel {
 	if err := r.prepare(model.Config, model.SSHPrivateKey); err != nil {
 		diagnostics.AddError("Failed to create temporary files", err.Error())
 		return nil
@@ -188,7 +193,7 @@ func (r *clusterResource) apply(model *clusterResourceModel, diagnostics *diag.D
 	}
 
 	// Get kubeconfig
-	kubeconfig, err := r.getKubeconfig()
+	kubeconfig, err := r.getKubeconfig(ctx)
 	if err != nil {
 		diagnostics.AddError("Failed to get kubeconfig", err.Error())
 		return nil
@@ -198,7 +203,7 @@ func (r *clusterResource) apply(model *clusterResourceModel, diagnostics *diag.D
 	return model
 }
 
-func (r *clusterResource) getKubeconfig() (string, error) {
+func (r *clusterResource) getKubeconfig(ctx context.Context) (string, error) {
 	// Redirect app writer to buffer
 	buf := new(bytes.Buffer)
 	writer := cmd.App.Writer
@@ -208,7 +213,7 @@ func (r *clusterResource) getKubeconfig() (string, error) {
 	}()
 
 	// Run k0sctl kubeconfig
-	if err := cmd.App.Run([]string{"k0sctl", "kubeconfig"}); err != nil {
+	if err := cmd.App.RunContext(ctx, []string{"k0sctl", "kubeconfig"}); err != nil {
 		return "", err
 	}
 	return buf.String(), nil
